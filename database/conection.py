@@ -43,6 +43,7 @@ def test_connection():
         print("Error durante la prueba de conexión:", str(e))
         return False
 conection()
+test_connection()
 if __name__ == "__main__":
     if conection():
         test_connection()
