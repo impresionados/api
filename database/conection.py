@@ -4,7 +4,7 @@ import dotenv
 from urllib.parse import quote_plus
 
 # Cargar las variables del archivo .env
-dotenv.load_dotenv()
+# dotenv.load_dotenv()
 
 def conection():
     """
