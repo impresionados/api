@@ -22,7 +22,7 @@ def conection():
         # Establecer la conexión
         connection = mongoengine.connect(
             db="impresionados",
-            host=f"mongodb+srv://impresionados:{os.getenv('DATABASE_PASSWORD')}@clusterimpresionados.jukxo.mongodb.net/?retryWrites=true&w=majority&appName=ClusterImpresionados"
+            host=f"mongodb+srv://impresionados:{os.environ.get('DATABASE_PASSWORD')}@clusterimpresionados.jukxo.mongodb.net/?retryWrites=true&w=majority&appName=ClusterImpresionados"
         )
         print("Conexión establecida con la base de datos.")
         return connection
