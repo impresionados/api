@@ -7,8 +7,18 @@ import uvicorn
 from pydantic import BaseModel
 from typing import List, Optional
 from database.conection import conection
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Reemplázalo con tu frontend
+    allow_credentials=True,
+    allow_methods=["*"],  # Permitir todos los métodos: GET, POST, PUT, DELETE, etc.
+    allow_headers=["*"],  # Permitir todos los headers
+)
 
 # ----- Modelos de Respuesta Pydantic -----
 # Modelo de Rating
