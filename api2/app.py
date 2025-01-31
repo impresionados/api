@@ -128,7 +128,7 @@ def get_product_by_id(product_id: str):
         'price': product.price,
         'stock': product.stock,
         'category': product.category,
-        'image': str(product.image.id) if product.image else None,
+        'image':  None, #str(product.image.id) if product.image else None,
         'ratings': [
             {
                 'user_id': rating.user_id,
@@ -138,6 +138,7 @@ def get_product_by_id(product_id: str):
             } for rating in product.ratings
         ]
     }
+
 
 @app.put("/products/{product_id}/stock", response_model=dict)
 def update_product_stock(product_id: str, new_stock: int):
