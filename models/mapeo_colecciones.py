@@ -10,6 +10,8 @@ class User(mongoengine.Document):
     email = mongoengine.StringField(required=True)
     password = mongoengine.StringField(required=True)
     registration_date = mongoengine.DateTimeField(required=True)
+    address = mongoengine.StringField(required=True)
+    tlf = mongoengine.IntField()
 
 class Rating(mongoengine.EmbeddedDocument):  # To specify that it is inside another class
     user_id = mongoengine.StringField(required=True)

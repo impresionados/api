@@ -1,4 +1,4 @@
-#!/home/nico/clases/interafaces/react/api/.venv/bin/python3
+#!/tmp/api/.venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

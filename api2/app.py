@@ -45,10 +45,11 @@ class ProductModel(BaseModel):
 
 # ----- Rutas para Usuarios -----
 @app.post("/users/", response_model=dict)
-def create_user(user_name: str, email: str, password: str):
+def create_user(user_name: str, email: str, password: str, address: str, tlf: int):
     if User.objects(email=email):
         raise HTTPException(status_code=400, detail="Email already registered")
-    user = User(user_name=user_name, email=email, password=password, registration_date=datetime.now())
+    user = User(user_name=user_name, email=email, password=password, address=address,
+	tlf=tlf ,registration_date=datetime.now())
     user.save()
     return {"message": "User created successfully"}
 
