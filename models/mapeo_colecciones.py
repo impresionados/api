@@ -1,6 +1,5 @@
 import mongoengine
-import json
-from datetime import datetime
+from mongoengine import Document, StringField, ReferenceField, ListField, FloatField, IntField
 
 class User(mongoengine.Document):
     meta = {'collection': 'users'}  # To specify the collection being mapped
@@ -10,6 +9,8 @@ class User(mongoengine.Document):
     email = mongoengine.StringField(required=True)
     password = mongoengine.StringField(required=True)
     registration_date = mongoengine.DateTimeField(required=True)
+    address = mongoengine.StringField(required=True)
+    tlf = mongoengine.IntField(required=True)
 
 class Rating(mongoengine.EmbeddedDocument):  # To specify that it is inside another class
     user_id = mongoengine.StringField(required=True)
@@ -17,18 +18,20 @@ class Rating(mongoengine.EmbeddedDocument):  # To specify that it is inside anot
     comment = mongoengine.StringField()
     date = mongoengine.DateTimeField(required=True)
 
+class Tipo(Document):
+    name = StringField(required=True, unique=True)
 
-class Product(mongoengine.Document):
-    meta = {'collection': 'products'}
+class SuperTipo(Document):
+    name = StringField(required=True, unique=True)
+    tipos_asociados = ListField(ReferenceField(Tipo))  # Relación con varios tipos
+class Product(Document):
+    name = StringField(required=True)
+    description = StringField()
+    price = FloatField(required=True)
+    stock = IntField(required=True)
+    super_tipo = ReferenceField(SuperTipo, required=True)  # Solo SuperTipos existentes
+    tipos = ListField(ReferenceField(Tipo))  # Solo Tipos existentes
 
-    # _id = mongoengine.IntField(required=True)
-    name = mongoengine.StringField(required=True)
-    description = mongoengine.StringField()
-    price = mongoengine.FloatField(required=True)
-    stock = mongoengine.IntField(required=True)
-    category = mongoengine.ListField(mongoengine.StringField())  # List of strings
-    image = mongoengine.FileField()
-    ratings = mongoengine.ListField(mongoengine.EmbeddedDocumentField(Rating))  # It will be a list of Rating objects
 
 
 class Order(mongoengine.Document):
@@ -40,3 +43,4 @@ class Order(mongoengine.Document):
     date = mongoengine.DateTimeField(required=True)
     total = mongoengine.FloatField(required=True)
     status = mongoengine.StringField(required=True)
+
