@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form, Query
 from fastapi.responses import Response
 from datetime import datetime
 from io import BytesIO
@@ -12,19 +12,24 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://10.102.10.35:5173", "http://10.102.9.193:5173"],  # Reemplázalo con tu frontend 5173
+    allow_origins=["http://localhost:5173", "http://10.102.10.35:5173", "http://10.102.9.193:5173", "http://10.102.10.42:5173"],  # Reemplázalo con tu frontend 5173
     allow_credentials=True,
     allow_methods=["*"],  # Permitir todos los métodos: GET, POST, PUT, DELETE, etc.
     allow_headers=["*"],  # Permitir todos los headers
 )
 # ========================== MODELOS ==========================
 
-class Tipo(Document):
-    name = StringField(required=True, unique=True)
-
 class SuperTipo(Document):
     name = StringField(required=True, unique=True)
-    tipos = ReferenceField(Tipo, required=True)  # Relación con Tipo
+
+
+class Tipo(Document):
+    """    new_super_type.super_tipo = id_super_type
+    new_super_type.tipos = IDs_types"""
+    name = StringField(required=True, unique=True)
+    super_tipo = ReferenceField(SuperTipo, required=True)  # Relación con Tipo
+    # tipos = ListField(ReferenceField(SuperTipo))  # Relación con varios Tipos
+
 
 class Products(Document):
     description = StringField(required=True)
@@ -33,8 +38,8 @@ class Products(Document):
     price = IntField(required=True, default=1)
     name = StringField(required=True)
     image = FileField(required=True)
-    supertipo = ReferenceField(Tipo, default="arreglar")
-    tipo = ReferenceField(Tipo, default="arreglar, pero tipo")
+    supertipo = ReferenceField(SuperTipo, default="arreglar")
+    tipo = ReferenceField(SuperTipo, default="arreglar, pero tipo")
     address = StringField(required=True)
     telefone = IntField(required=  True)
     ratings = StringField(required=True)
@@ -62,7 +67,10 @@ class ProductModel(BaseModel):
     class Config:
         orm_mode = True  # Esto permite que Pydantic maneje objetos MongoEngine
 
-
+class TipoCreateRequest(BaseModel):
+    name_type: str
+    id_super_type: str
+    # IDs_types: List[str]
 # ========================== RUTAS PARA USUARIOS ==========================
 
 @app.post("/users/", response_model=dict)
@@ -74,6 +82,15 @@ def create_user(user_name: str, email: str, password: str, address: str, tlf: in
     user = User(user_name=user_name, email=email, password=password, address= address, tlf= tlf, registration_date=datetime.now())
     user.save()
     return {"message": "User created successfully"}
+
+
+@app.get("/users/exist", response_model=dict)
+def user_exist(get_email:str):
+    print(get_email)
+    # return {"message": get_email}
+    return {"exists": bool(User.objects(email=get_email).first())}
+    # user = User.objects(email=email)
+    # print(user)
 
 @app.get("/users/{email}", response_model=dict)
 def get_user_by_email(email: str):
@@ -93,6 +110,7 @@ def update_user_email(user_id: str, new_email: str):
     user.update(email=new_email)
     return {"message": "Email updated successfully"}
 
+
 @app.delete("/users/{user_id}", response_model=dict)
 def delete_user(user_id: str):
     user = User.objects(id=user_id).first()
@@ -105,14 +123,18 @@ def delete_user(user_id: str):
 
 @app.get("/tipos/")
 def obtener_tipos():
-    return [{"id": str(tipo.id), "nombre": tipo.name} for tipo in Tipo.objects()]
+    return [{"id": str(tipo.id), "nombre": tipo.name} for tipo in SuperTipo.objects()]
 
 @app.post("/tipo/")
-def crear_tipo(nombre: str):
-    if Tipo.objects(nombre=nombre):
-        raise HTTPException(status_code=400, detail="El tipo ya existe")
-    tipo = Tipo(nombre=nombre).save()
-    return {"id": str(tipo.id), "nombre": tipo.name}
+def crear_tipo(nombre):
+    if nombre is None or nombre.strip() == '':
+        raise ValueError("El nombre no puede ser nulo o vacío.")
+    tipo = SuperTipo(name=nombre)
+    tipo.save()
+    return {"id" : str(tipo.id), "nombre" : tipo.name}
+
+
+
 
 # @app.get("/supertipos/")
 # def obtener_supertipos():
@@ -277,7 +299,7 @@ def create_type(name_type:str):
 @app.get('/super_type_all/')
 def get_all_type():
     aux = []
-    for tipo in Tipo.objects():
+    for tipo in SuperTipo.objects():
         auxx = {
             'id': str(tipo.id),
             'name': tipo.name
@@ -288,14 +310,47 @@ def get_all_type():
 #Eliminar Type
 @app.delete('/super_type/delete/')
 def delete_type(id_type:str):
-    Tipo.objects(id=id_type).delete()
+    SuperTipo.objects(id=id_type).delete()
     return {"message": "Type deleted"}
 
 #----------------------------------------------------------------
 #Crear Super type
-@app.get('/type/')
-def create_super_type(name_super_type:str, id_type:str):
-    new_super_type = crear_supertipo(name_super_type, [id_type])
-    return {"name": new_super_type}
+@app.post('/type/')
+def create_super_type(data: TipoCreateRequest):
+    # Verificar que el SuperTipo existe
+    super_tipo_ref = SuperTipo.objects(id=data.id_super_type).first()
+    if not super_tipo_ref:
+        return {"error": "SuperTipo no encontrado"}
+
+    # Crear el nuevo Tipo
+    new_tipo = Tipo(
+        name=data.name_type,
+        super_tipo=super_tipo_ref,
+    )
+    new_tipo.save()
+
+    return {"message": f"Tipo '{new_tipo.name}' creado correctamente"}
 
 #Todos los super type
+
+@app.get("/supertypes_with_types/")
+def obtener_supertypes_con_tipos():
+    supertipos_dict = {}
+
+    for supertipo in SuperTipo.objects():
+        supertipos_dict[supertipo.name] = []
+        for tipo in Tipo.objects(super_tipo=supertipo):
+            supertipos_dict[supertipo.name].append(tipo.name)
+
+    return supertipos_dict
+    # for tipo in SuperTipo.objects():
+    #     if tipo.idsupertipo:  # Asegurar que el tipo tiene un supertipo asignado
+    #         supertipo_id = str(tipo.idsupertipo.id)
+    #         supertipo_nombre = tipo.idsupertipo.name
+    #
+    #         if supertipo_nombre not in supertipos_dict:
+    #             supertipos_dict[supertipo_nombre] = []
+    #
+    #         supertipos_dict[supertipo_nombre].append(tipo.name)
+    #
+    # return [supertipos_dict]
