@@ -34,15 +34,12 @@ class Tipo(Document):
 class Products(Document):
     description = StringField(required=True)
     stock = IntField(required=True, default=0)
-    category = ListField(StringField())
     price = IntField(required=True, default=1)
     name = StringField(required=True)
     image = FileField(required=True)
     supertipo = ReferenceField(SuperTipo, default="arreglar")
-    tipo = ReferenceField(SuperTipo, default="arreglar, pero tipo")
-    address = StringField(required=True)
-    telefone = IntField(required=  True)
-    ratings = StringField(required=True)
+    tipo = ReferenceField(Tipo, default="arreglar, pero tipo")
+    # ratings = StringField(required=True)
 # ========================== MODELOS DE RESPUESTA Pydantic ==========================
 
 class RatingModel(BaseModel):
@@ -119,42 +116,40 @@ def delete_user(user_id: str):
     user.delete()
     return {"message": "User deleted successfully"}
 
-# ========================== RUTAS PARA TIPOS Y SUPER TIPOS ==========================
-
-@app.get("/tipos/")
-def obtener_tipos():
-    return [{"id": str(tipo.id), "nombre": tipo.name} for tipo in SuperTipo.objects()]
-
-@app.post("/tipo/")
-def crear_tipo(nombre):
-    if nombre is None or nombre.strip() == '':
-        raise ValueError("El nombre no puede ser nulo o vacío.")
-    tipo = SuperTipo(name=nombre)
-    tipo.save()
-    return {"id" : str(tipo.id), "nombre" : tipo.name}
-
-
-
-
-# @app.get("/supertipos/")
-# def obtener_supertipos():
-#     return [{"id": str(st.id), "nombre": st.name, "tipos": [t.name for t in st.tipos]} for st in Tipo.objects()]
-
-# @app.post("/supertipo/")
-# def crear_supertipo(nombre: str, tipos_ids: list[str]):
-#     tipos = Tipo.objects(id__in=tipos_ids)
-#     if not tipos:
-#         raise HTTPException(status_code=400, detail="Ningún tipo válido encontrado")
+# # ========================== RUTAS PARA TIPOS Y SUPER TIPOS ==========================
 #
-#     supertipo = Tipo(nombre=nombre, tipos=tipos).save()
-#     return {"id": str(supertipo.id), "nombre": supertipo.name, "tipos": [t.name for t in tipos]}
+# @app.get("/tipos/")
+# def obtener_tipos():
+#     return [{"id": str(tipo.id), "nombre": tipo.name} for tipo in SuperTipo.objects()]
+#
+# @app.post("/tipo/")
+# def crear_tipo(nombre):
+#     if nombre is None or nombre.strip() == '':
+#         raise ValueError("El nombre no puede ser nulo o vacío.")
+#     tipo = SuperTipo(name=nombre)
+#     tipo.save()
+#     return {"id" : str(tipo.id), "nombre" : tipo.name}
+
 
 # ========================== RUTAS PARA PRODUCTOS ==========================
 
 @app.post("/products/", response_model=dict)
-async def create_product(name: str = Form(...), description: str = Form(...), price: float = Form(...), stock: int = Form(...), category: List[str] = Form(...), image: UploadFile = File(...)):
+async def create_product(name: str = Form(...),
+                         description: str = Form(...),
+                         price: float = Form(...),
+                         stock: int = Form(...),
+                         # category: List[str] = Form(...),
+                         image: UploadFile = File(...),
+                         supertipo: str = Form(...),
+                         tipo: str = Form(...),
+                         # ratings: List[RatingModel] = Form(...)
+                         ):
     image_data = BytesIO(await image.read())
-    product = Products(nombre=name, description=description, price=price, stock=stock, category=category)
+    product = Products(name=name, description=description, price=price, stock=stock,
+                       supertipo=supertipo,
+                       tipo=tipo,
+                       # ratings=ratings
+                       )
     product.image.put(image_data, filename=image.filename, content_type=image.content_type)
     product.save()
     return {"message": "Product created successfully", "product_id": str(product.id)}
@@ -290,12 +285,12 @@ def delete_order(order_id: str):
 
 
 #Crear type
-@app.get('/super_type/')
-def create_type(name_type:str):
-    new_type = crear_tipo(name_type)
-    return new_type
+# @app.get('/super_type/')
+# def create_type(name_type:str):
+#     new_type = create_type(name_type)
+#     return new_type
 
-#Todos los type
+#Todos los super type
 @app.get('/super_type_all/')
 def get_all_type():
     aux = []
@@ -313,8 +308,22 @@ def delete_type(id_type:str):
     SuperTipo.objects(id=id_type).delete()
     return {"message": "Type deleted"}
 
+#Devolver id segun nombre super tipo
+@app.get('/super_type/by_name/')
+def get_id_by_name_super_type(name_super_type:str):
+    super_type_ref = SuperTipo.objects(name=name_super_type).first()
+    if not super_type_ref:
+        return {"error": "SuperTipo no encontrado"}
+    return {"id": str(super_type_ref.id)}
+#Devolver tipos segun id super tipo
+@app.get('/type/by_super_type/')
+def get_types_by_super_type(id_super_type:str):
+    types_by_super_type = []
+    for tipo in Tipo.objects(super_tipo=id_super_type):
+        types_by_super_type.append(tipo.name)
+    return types_by_super_type
 #----------------------------------------------------------------
-#Crear Super type
+#Crear type
 @app.post('/type/')
 def create_super_type(data: TipoCreateRequest):
     # Verificar que el SuperTipo existe
@@ -332,7 +341,6 @@ def create_super_type(data: TipoCreateRequest):
     return {"message": f"Tipo '{new_tipo.name}' creado correctamente"}
 
 #Todos los super type
-
 @app.get("/supertypes_with_types/")
 def obtener_supertypes_con_tipos():
     supertipos_dict = {}
@@ -343,14 +351,10 @@ def obtener_supertypes_con_tipos():
             supertipos_dict[supertipo.name].append(tipo.name)
 
     return supertipos_dict
-    # for tipo in SuperTipo.objects():
-    #     if tipo.idsupertipo:  # Asegurar que el tipo tiene un supertipo asignado
-    #         supertipo_id = str(tipo.idsupertipo.id)
-    #         supertipo_nombre = tipo.idsupertipo.name
-    #
-    #         if supertipo_nombre not in supertipos_dict:
-    #             supertipos_dict[supertipo_nombre] = []
-    #
-    #         supertipos_dict[supertipo_nombre].append(tipo.name)
-    #
-    # return [supertipos_dict]
+
+ #filtro
+# @app.get("/filter/")
+# def filtrar_tipos(listas:list):
+#     for lista in listas:
+#         if lista != []:
+#             pass

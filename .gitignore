@@ -1,3 +1,38 @@
-.venv
-*/__pycache__
+# Ignorar archivos de entorno
 .env
+
+# Ignorar entornos virtuales de Python
+.venv/
+venv/
+
+# Ignorar dependencias de Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Ignorar dependencias de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar cachés y archivos temporales
+.DS_Store
+Thumbs.db
+
+# Ignorar archivos de compilación de React
+build/
+dist/
+
+# Ignorar archivos de logs
+logs/
+*.log
+
+# Ignorar configuración de editores de código
+.vscode/
+.idea/
+*.swp
+
+# Ignorar archivos específicos del sistema
+*.bak
+*.tmp

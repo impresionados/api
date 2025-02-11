@@ -1,5 +1,5 @@
 import mongoengine
-from mongoengine import Document, StringField, ReferenceField, ListField, FloatField, IntField
+from mongoengine import Document, StringField, ReferenceField, ListField, FloatField, IntField, FileField
 
 class User(mongoengine.Document):
     meta = {'collection': 'users'}  # To specify the collection being mapped
@@ -24,14 +24,22 @@ class Tipo(Document):
 class SuperTipo(Document):
     name = StringField(required=True, unique=True)
     tipos_asociados = ListField(ReferenceField(Tipo))  # Relación con varios tipos
-class Product(Document):
+# class Product(Document):
+#     name = StringField(required=True)
+#     description = StringField()
+#     price = FloatField(required=True)
+#     stock = IntField(required=True)
+#     super_tipo = ReferenceField(SuperTipo, required=True)  # Solo SuperTipos existentes
+#     tipos = ListField(ReferenceField(Tipo))  # Solo Tipos existentes
+class Products(Document):
+    description = StringField(required=True)
+    stock = IntField(required=True, default=0)
+    price = IntField(required=True, default=1)
     name = StringField(required=True)
-    description = StringField()
-    price = FloatField(required=True)
-    stock = IntField(required=True)
-    super_tipo = ReferenceField(SuperTipo, required=True)  # Solo SuperTipos existentes
-    tipos = ListField(ReferenceField(Tipo))  # Solo Tipos existentes
-
+    image = FileField(required=True)
+    supertipo = ReferenceField(SuperTipo, default="arreglar")
+    tipo = ListField(ReferenceField(Tipo, default="arreglar, pero tipo"))
+    ratings = StringField(required=True)
 
 
 class Order(mongoengine.Document):
