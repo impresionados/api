@@ -12,7 +12,8 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://10.102.10.35:5173", "http://10.102.9.193:5173", "http://10.102.10.42:5173"],  # Reemplázalo con tu frontend 5173
+    # allow_origins=["http://localhost:5173", "http://10.102.10.35:5173", "http://10.102.9.193:5173", "http://10.102.10.42:5173"],  # Reemplázalo con tu frontend 5173
+    allow_origins=["*"],  # Reemplázalo con tu frontend 5173
     allow_credentials=True,
     allow_methods=["*"],  # Permitir todos los métodos: GET, POST, PUT, DELETE, etc.
     allow_headers=["*"],  # Permitir todos los headers
@@ -39,6 +40,8 @@ class Products(Document):
     image = FileField(required=True)
     supertipo = ReferenceField(SuperTipo, default="arreglar")
     tipo = ReferenceField(Tipo, default="arreglar, pero tipo")
+    ratings = StringField(required=True)
+    category = StringField(required=True)
     # ratings = StringField(required=True)
 # ========================== MODELOS DE RESPUESTA Pydantic ==========================
 
