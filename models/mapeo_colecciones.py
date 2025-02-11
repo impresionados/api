@@ -39,7 +39,7 @@ class Products(Document):
     image = FileField(required=True)
     supertipo = ReferenceField(SuperTipo, default="arreglar")
     tipo = ListField(ReferenceField(Tipo, default="arreglar, pero tipo"))
-    ratings = StringField(required=True)
+    # ratings = StringField(required=True)
 
 
 class Order(mongoengine.Document):
