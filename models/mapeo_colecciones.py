@@ -31,17 +31,17 @@ class SuperTipo(Document):
 #     stock = IntField(required=True)
 #     super_tipo = ReferenceField(SuperTipo, required=True)  # Solo SuperTipos existentes
 #     tipos = ListField(ReferenceField(Tipo))  # Solo Tipos existentes
-class Products(Document):
-    description = StringField(required=True)
-    stock = IntField(required=True, default=0)
-    price = IntField(required=True, default=1)
-    name = StringField(required=True)
-    image = FileField(required=True)
-    supertipo = ReferenceField(SuperTipo, default="arreglar")
-    tipo = ListField(ReferenceField(Tipo, default="arreglar, pero tipo"))
-    ratings = StringField(required=True)
-    category = StringField(required=True)
-
+# class Products(Document):
+#     description = StringField(required=True)
+#     stock = IntField(required=True, default=0)
+#     price = IntField(required=True, default=1)
+#     name = StringField(required=True)
+#     image = FileField(required=True)
+#     supertipo = ReferenceField(SuperTipo, default="arreglar")
+#     tipo = ListField(ReferenceField(Tipo, default="arreglar, pero tipo"))
+#     ratings = ListField(required=True)
+#     category = StringField( default="")
+    
 class Order(mongoengine.Document):
     meta = {'collection': 'orders'}
 

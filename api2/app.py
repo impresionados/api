@@ -1,13 +1,13 @@
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form, Query
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 from fastapi.responses import Response
 from datetime import datetime
 from io import BytesIO
 from pydantic import BaseModel
 from typing import List, Optional
 from database.conection import conection
-from mongoengine import FileField
 from models.mapeo_colecciones import *
 from fastapi.middleware.cors import CORSMiddleware
+from bson.dbref import DBRef
 app = FastAPI()
 
 app.add_middleware(
@@ -25,11 +25,8 @@ class SuperTipo(Document):
 
 
 class Tipo(Document):
-    """    new_super_type.super_tipo = id_super_type
-    new_super_type.tipos = IDs_types"""
     name = StringField(required=True, unique=True)
     super_tipo = ReferenceField(SuperTipo, required=True)  # Relación con Tipo
-    # tipos = ListField(ReferenceField(SuperTipo))  # Relación con varios Tipos
 
 
 class Products(Document):
@@ -38,11 +35,11 @@ class Products(Document):
     price = IntField(required=True, default=1)
     name = StringField(required=True)
     image = FileField(required=True)
-    supertipo = ReferenceField(SuperTipo, default="arreglar")
-    tipo = ReferenceField(Tipo, default="arreglar, pero tipo")
-    ratings = StringField(required=True)
-    category = StringField(required=True)
-    # ratings = StringField(required=True)
+    supertipo = ReferenceField(SuperTipo, default="")
+    tipo = ListField(ReferenceField(Tipo, default=""), default="list")
+    # ratings = ListField(required=True)
+    # category = StringField(required=True)
+    ratings = StringField(required=True, default="")
 # ========================== MODELOS DE RESPUESTA Pydantic ==========================
 
 class RatingModel(BaseModel):
@@ -60,7 +57,9 @@ class ProductModel(BaseModel):
     description: Optional[str]
     price: float
     stock: int
-    category: List[str]
+    # category: List[str]
+    tipo: List[str]
+    supertipo: str
     image: Optional[str]
     ratings: List[RatingModel]
 
@@ -147,19 +146,19 @@ async def create_product(name: str = Form(...),
                          tipo: str = Form(...),
                          # ratings: List[RatingModel] = Form(...)
                          ):
+    aux = tipo.split(',')
     image_data = BytesIO(await image.read())
     product = Products(name=name, description=description, price=price, stock=stock,
                        supertipo=supertipo,
-                       tipo=tipo,
+                       tipo=aux,
                        # ratings=ratings
                        )
     product.image.put(image_data, filename=image.filename, content_type=image.content_type)
     product.save()
     return {"message": "Product created successfully", "product_id": str(product.id)}
-
 @app.get("/products/", response_model=List[ProductModel])
 def get_all_products():
-    products = Products.objects()  # Obtiene todos los productos de la base de datos
+    products = Products.objects()
     return [
         {
             "id": str(product.id),
@@ -167,7 +166,9 @@ def get_all_products():
             "description": product.description,
             "price": product.price,
             "stock": product.stock,
-            "category": product.category,
+            # "tipo": product.tipo if isinstance(product.tipo, list) else [product.tipo],
+            "tipo": [str(dbref.id) for dbref in product.tipo],
+            "supertipo": product.supertipo.name if product.supertipo else None,
             "image": f"http://localhost:8001/products/{product.id}/image" if product.image else None,
             "ratings": [
                 {
@@ -181,6 +182,7 @@ def get_all_products():
         }
         for product in products
     ]
+
 
 
 @app.get("/products/{product_id}", response_model=ProductModel)
